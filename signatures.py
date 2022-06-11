@@ -1,16 +1,8 @@
 #%% Libraries
-from os import chdir, getcwd
-wd='C:\\Users\\ilyas\\Bureau\\ENSTA\\Finance\\PRE'
-chdir(wd)
 import numpy as np
 import numpy.random as npr
 from scipy.stats import norm
 import pandas as pd
-# from sklearn.linear_model import LinearRegression
-# from sklearn.model_selection import train_test_split
-# from sklearn.metrics import r2_score
-# import matplotlib.pyplot as plt
-# from sklearn.metrics import mean_squared_error
 import scipy.integrate as integrate
 import iisignature as sig
 import csv
@@ -23,17 +15,13 @@ d = 1 # d paths of d BM
 sigma = 0.2
 r = 0.02
 K=1
-validation_size =100
 
-k = np.linspace(0.6,1.7,validation_size)
-x0 = 0.99 * k
-X0 = x0[0]
-K = k[0]
 # #%% European call option pricing & $E_n(t) = exp\left\{\left(nr+n(n-1)\frac{σ^2}{2} \right)t\right\}
 
 def E(n,t):
     y = np.exp((n*r+0.5*n*(n-1)*sigma**2)*t)
     return y
+
 def EC(r,X0,sigma,T,K):
     # True price by Balck-Scholes formula 
     d1= 1./(sigma*np.sqrt(T))*(np.log(X0/K)+(r+sigma**2/2)*T)
@@ -66,11 +54,6 @@ def Asian_call_MC_BS(r,S0,sigma,T,K,m,n):
     Asian_MC_price=np.mean(payoff)
 
     return Asian_MC_price
-
-#%%
-K = k[90-1]
-X0 = 0.99*K
-
 m = 4 #level of signature
 dim_signature = int((3**(m+1)-1)/2)
 Regression_sample_size = 1000
@@ -83,10 +66,6 @@ y_FC=np.zeros((Regression_sample_size,1)) # FORWARD CONTRACT
 #y_VS=np.zeros((Regression_sample_size,1)) # VARIANCE SWAP
 
 x= np.ones((Regression_sample_size,dim_signature))
-# x_EC= np.ones((Regression_sample_size,dim_signature))
-# x_AC= np.ones((Regression_sample_size,dim_signature))
-# x_LC= np.ones((Regression_sample_size,dim_signature))
-# x_FC= np.ones((Regression_sample_size,dim_signature))
 
 t = np.zeros((1,Sample_size+1))
 t[0]=np.linspace(0,1,Sample_size+1)
@@ -100,38 +79,13 @@ for i in range(Regression_sample_size):
     signature = sig.sig(augmented_path_BS,m)
     x[i,1:]= signature
     
-    y_EC[i,0] = np.maximum(BS_price[0,-1]-K,0) # for testing the european call
-    # y_LC[i,0] = np.maximum(BS_price[0,-1]-BS_price.min(),0)
-    # y_AC[i,0] = np.maximum(np.sum(BS_price)/(Sample_size+1) - K,0)
-    # y_FC[i,0] = BS_price[0,-1]-K  # for testing the forward contract
-Regression_sample = pd.DataFrame(data=x)
-f = open("x.csv",'w')
-writer = csv.writer(f,delimiter=';')
-writer.writerows(x)
-f.close()
+    y_EC[i,0] = np.maximum(BS_price[0,-1]-K,0) # European Call Option
+    y_LC[i,0] = np.maximum(BS_price[0,-1]-BS_price.min(),0) # Lookback Call option with floating strike
+    y_AC[i,0] = np.maximum(np.sum(BS_price)/(Sample_size+1) - K,0) #Asian Call Option
+    y_FC[i,0] = BS_price[0,-1]-K  # Forward Contract
+    
 
-f1 = open("y_EC.csv",'w')
-writer = csv.writer(f1,delimiter=';')
-writer.writerows(y_EC)
-f1.close()
-
-# f2 = open("y_LC.csv",'w')
-# writer = csv.writer(f2,delimiter=';')
-# writer.writerows(y_LC)
-# f2.close()
-
-# f3 = open("y_AC.csv",'w')
-# writer = csv.writer(f3,delimiter=';')
-# writer.writerows(y_AC)
-# f3.close()
-
-# f4 = open("y_FC.csv",'w')
-# writer = csv.writer(f4,delimiter=';')
-# writer.writerows(y_FC)
-# f4.close()
-
-
-#%%
+#%% Computing expected signature
 phi_0= lambda t : 1 #initial term
 
 phi_1=[0]*3  #first order term
@@ -210,6 +164,7 @@ for i in range (1,4):
                 if not ((i==1) or (i == 2 and j==1) or (i==2 and j ==2) or (i == 3)) :
                     result= lambda t : 0
                 phi_4[ind] = result
+# Computing expected signature for t = T
 phi_T[0][0]=1
 a=1
 for i in range(3):
