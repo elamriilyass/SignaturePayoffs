@@ -1,5 +1,4 @@
 rm(list=objects())
-setwd("C:/Users/ilyas/Bureau/ENSTA/Finance/PRE")
 library(ramify)
 r=0.02
 T=1
