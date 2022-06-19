@@ -1,6 +1,5 @@
 #%% Setting up environment
 from os import chdir
-wd='C:\\Users\\ilyas\\Bureau\\ENSTA\\Finance\\PRE'
 chdir(wd)
 
 import numpy as np
